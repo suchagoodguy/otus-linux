@@ -66,7 +66,22 @@ Vagrant.configure("2") do |config|
  	  box.vm.provision "shell", inline: <<-SHELL
 	      mkdir -p ~root/.ssh
               cp ~vagrant/.ssh/auth* ~root/.ssh
-	      yum install -y mdadm smartmontools hdparm gdisk
+	      yum install -y mdadm smartmontools hdparm gdisk dosfstools
+	      mdadm --create /dev/md10 --level=10 --raid-devices=4 /dev/sdb /dev/sdc /dev/sdd /dev/sde
+	      mdadm --detail --verbose --scan > /etc/mdadm.conf
+	      lsblk
+	      sgdisk -Z /dev/md10
+	      sgdisk -n 0:0:+95M -t 0:ef00 -c 0:"EFI partition" /dev/md10
+	      sgdisk -n 0:0:+100M -t 0:8300 -c 0:"root partition" /dev/md10
+	      sgdisk -n 0:0:+100M -t 0:8300 -c 0:"opt partition" /dev/md10
+	      sgdisk -n 0:0:+100M -t 0:8300 -c 0:"var partition" /dev/md10
+	      sgdisk -n 0:0:0 -t 0:8200 -c 0:"swap partition" /dev/md10
+	      sgdisk -p /dev/md10
+	      mkfs.vfat /dev/md10p1
+	      mkfs.ext4 /dev/md10p2
+	      mkfs.ext4 /dev/md10p3
+	      mkfs.ext4 /dev/md10p4
+	      mkswap /dev/md10p5
   	  SHELL
 
       end
